@@ -1,0 +1,54 @@
+{
+	"name": "df_restaurantes",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "restaurantes_csv",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          restaurante_id as string,",
+				"          nombre_restaurante as string,",
+				"          tipo_cocina as string,",
+				"          calificacion_promedio as string,",
+				"          activo as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 derive(nombre_restaurante = initCap(lower(trim(regexReplace(nombre_restaurante, '\\\\s*\\\\d+\\\\s*$', ''))))) ~> derivedColumn1",
+				"derivedColumn1 split(!isNull(nombre_restaurante) && trim(nombre_restaurante) != '',",
+				"     disjoint: false) ~> split1@(valido, rechazado)",
+				"split1@valido derive(calificacion_promedio = toDecimal(calificacion_promedio)) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     format: 'table') ~> sink1"
+			]
+		}
+	}
+}
